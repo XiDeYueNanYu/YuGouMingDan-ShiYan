@@ -282,9 +282,9 @@
                     document.getElementById('sync-time').innerText = `Cập nhật gần nhất: ${meta.last_updated || 'N/A'}`;
                     
                     const statusCard = document.getElementById('status-card');
-                    if (meta.status === "Dữ liệu có thay đổi") {
+                    if (meta.status === "数据有改变（Dữ liệu có thay đổi）") {
                         statusCard.style.borderLeftColor = "#e67e22"; // Cam đậm cảnh báo biến động
-                    } else if (meta.status === "Không thay đổi") {
+                    } else if (meta.status === "保持数据（Không thay đổi）") {
                         statusCard.style.borderLeftColor = "#2ecc71";
                     }
                 }
