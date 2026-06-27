@@ -162,6 +162,64 @@
             color: #7f8c8d;
             font-size: 1.2rem;
         }
+		
+		/* 📱 CẤU HÌNH RESPONSIVE: Tự động tối ưu giao diện trên thiết bị di động */
+@media (max-width: 600px) {
+    body {
+        padding-top: 70px; /* Thu nhỏ khoảng cách đầu trang một chút */
+    }
+    
+    header {
+        font-size: 1.1rem; /* Thu nhỏ cỡ chữ tiêu đề để không bị tràn dòng */
+        padding: 0 10px;
+        text-align: center;
+    }
+
+    .widget-panel {
+        flex-direction: column; /* Chuyển 2 khung nổi thành 2 dòng */
+        gap: 10px;
+    }
+
+    .product-item {
+        flex-direction: column; /* 💡 QUAN TRỌNG: Chuyển bố cục sản phẩm từ Ngang thành Dọc */
+    }
+
+    .product-left {
+        width: 100%; /* Chiếm toàn bộ chiều ngang */
+        min-width: 100%;
+        padding: 15px;
+        border-right: none;
+        border-bottom: 1px solid #e2e8f0; /* Chuyển viền phải thành viền dưới */
+        background-color: #fafafa;
+    }
+
+    .product-item.has-changed .product-left {
+        border-right: none;
+        border-bottom: 1px solid #ffdfb4;
+    }
+
+    .product-left img {
+        max-height: 180px; /* Cho phép ảnh hiển thị to và rõ ràng hơn trên điện thoại */
+    }
+
+    .product-right {
+        padding: 15px; /* Thu hẹp padding một chút cho thoáng màn hình */
+    }
+
+    .info-row {
+        font-size: 0.9rem; /* Giảm nhẹ cỡ chữ để hiển thị vừa vặn */
+    }
+
+    .info-label {
+        width: 110px; /* Thu hẹp độ rộng của nhãn tiếng Trung để nhường chỗ cho giá trị */
+        min-width: 110px;
+    }
+    
+    .change-badge {
+        width: 100%; /* Khung thông báo biến động trải dài hết chiều ngang */
+        text-align: left;
+    }
+}
     </style>
 </head>
 <body>
