@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Truy vấn Nhập hàng 1688</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+            padding-top: 80px; /* Nhường chỗ cho tiêu đề luôn nổi cố định phía trên */
+            padding-bottom: 40px;
+        }
+        /* Tiêu đề luôn nổi cố định trên đầu màn hình */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 65px;
+            background-color: #2c3e50;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            z-index: 1000;
+            letter-spacing: 0.5px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+        /* Widget Khung nổi thông tin */
+        .widget-panel {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .card-widget {
+            flex: 1;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-left: 5px solid #3498db;
+        }
+        .card-widget.total-money {
+            border-left-color: #e67e22; /* Màu cam 1688 đặc trưng cho tài chính */
+        }
+        .card-widget.status-alert {
+            border-left-color: #2ecc71;
+        }
+        .widget-title {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .widget-value {
+            font-size: 1.35rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .widget-subtext {
+            font-size: 0.75rem;
+            color: #95a5a6;
+            margin-top: 3px;
+        }
+        /* Cấu trúc Danh sách sản phẩm dạng bảng chia 2 cột Trái - Phải */
+        .product-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .product-item {
+            display: flex;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        /* Cột bên trái: Hiển thị hình ảnh sản phẩm */
+        .product-left {
+            width: 160px;
+            min-width: 160px;
+            background-color: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid #e2e8f0;
+            padding: 10px;
+        }
+        .product-left img {
+            max-width: 100%;
+            max-height: 140px;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+        .no-img {
+            font-size: 0.8rem;
+            color: #bdc3c7;
+            text-align: center;
+        }
+        /* Cột bên phải: Hiển thị các thông tin tương ứng */
+        .product-right {
+            flex: 1;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
+        }
+        .info-row {
+            display: flex;
+            line-height: 1.4;
+            font-size: 0.95rem;
+        }
+        .info-label {
+            width: 140px;
+            min-width: 140px;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+        .info-val {
+            color: #2c3e50;
+            word-break: break-word;
+        }
+        .info-val.product-name {
+            font-weight: bold;
+            color: #1a202c;
+        }
+        .info-val a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .info-val a:hover {
+            text-decoration: underline;
+        }
+        .highlight-orange {
+            color: #e67e22;
+            font-weight: bold;
+        }
+        .highlight-bold {
+            font-weight: bold;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header id="provider-title">ĐANG TẢI THÔNG TIN NHÀ CUNG CẤP...</header>
+
+    <div class="container">
+        <div class="widget-panel">
+            <div class="card-widget total-money">
+                <div class="widget-title">总金额 (Tổng tiền nhập hàng)</div>
+                <div class="widget-value highlight-orange" id="total-amount">0.00 ¥</div>
+                <div class="widget-subtext">Tính trên sản phẩm có số lượng > 0</div>
+            </div>
+            <div class="card-widget status-alert" id="status-card">
+                <div class="widget-title">数据 trạng thái (Biến động dữ liệu)</div>
+                <div class="widget-value" id="data-status">Đang kiểm tra...</div>
+                <div class="widget-subtext" id="sync-time">Cập nhật lúc: --:--:--</div>
+            </div>
+        </div>
+
+        <div id="main-content" class="product-list">
+            <div class="loading">Đang tải dữ liệu sản phẩm từ kho lưu trữ...</div>
+        </div>
+    </div>
+
+    <script>
+        // Hàm tự động thực thi khi trang web được tải xong
+        async function loadData() {
+            try {
+                // 1. Fetch dữ liệu thông tin biến động bổ trợ trước (meta.json)
+                const metaResponse = await fetch('data/meta.json?t=' + new Date().getTime());
+                if (metaResponse.ok) {
+                    const meta = await metaResponse.json();
+                    document.getElementById('provider-title').innerText = `供应商: ${meta.provider || 'N/A'} (BẢNG TRUY VẤN SẢN PHẨM)`;
+                    document.getElementById('data-status').innerText = meta.status || 'Không xác định';
+                    document.getElementById('sync-time').innerText = `Cập nhật gần nhất: ${meta.last_updated || 'N/A'}`;
+                    
+                    // Thiết lập màu sắc khung nổi thông báo dựa trên trạng thái biến động
+                    const statusCard = document.getElementById('status-card');
+                    if (meta.status === "Dữ liệu có thay đổi") {
+                        statusCard.style.borderLeftColor = "#e74c3c"; // Màu đỏ cảnh báo
+                    } else if (meta.status === "Không thay đổi") {
+                        statusCard.style.borderLeftColor = "#2ecc71"; // Màu xanh an toàn
+                    }
+                }
+
+                // 2. Fetch danh sách sản phẩm chính thức (products.json)
+                const prodResponse = await fetch('data/products.json?t=' + new Date().getTime());
+                if (!prodResponse.ok) throw new Error("Không thể tải danh sách sản phẩm");
+                
+                const products = await prodResponse.json();
+                const container = document.getElementById('main-content');
+                container.innerHTML = ''; // Xóa thông báo loading
+
+                if (products.length === 0) {
+                    container.innerHTML = '<div class="loading">Không tìm thấy sản phẩm nào có số lượng đặt lớn hơn 0.</div>';
+                    return;
+                }
+
+                let totalCNY = 0;
+
+                // 3. Vòng lặp kết xuất mã HTML cho từng sản phẩm theo cấu trúc yêu cầu
+                products.forEach(item => {
+                    // Tính tổng tiền cộng dồn (Số lượng * Giá)
+                    totalCNY += (item.qty * item.price);
+
+                    // Xử lý chuỗi hình ảnh phòng trường hợp ô dữ liệu trống
+                    let imageHTML = `<div class="no-img">Không có ảnh</div>`;
+                    if (item.image && item.image.startsWith('http')) {
+                        imageHTML = `<img src="${item.image}" alt="Sản phẩm 1688" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'no-img\'>Lỗi tải ảnh</div>';">`;
+                    }
+
+                    // Xử lý liên kết sản phẩm, nếu trống không cho click lung tung
+                    const linkHTML = (item.link && item.link !== "#") 
+                        ? `<a href="${item.link}" target="_blank">点击访问 (Xem Sản Phẩm)</a>` 
+                        : `<span style="color:#95a5a6;font-style:italic;">Không có liên kết</span>`;
+
+                    // Tạo khối HTML cấu trúc Trái (Ảnh) - Phải (Nội dung dữ liệu cụ thể)
+                    const itemHTML = `
+                        <div class="product-item">
+                            <div class="product-left">
+                                ${imageHTML}
+                            </div>
+                            <div class="product-right">
+                                <div class="info-row">
+                                    <div class="info-label">序号 (STT):</div>
+                                    <div class="info-val highlight-bold">${item.no}</div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">品名 (Tên sản phẩm):</div>
+                                    <div class="info-val product-name">${item.name || '<span style="color:#b2bec3;font-style:italic;">Trống</span>'}</div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">产品链接 (Liên kết):</div>
+                                    <div class="info-val">${linkHTML}</div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">预购数量 (Số lượng):</div>
+                                    <div class="info-val highlight-bold">${item.qty}</div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">价格 (Giá nhập):</div>
+                                    <div class="info-val highlight-orange">${item.price ? item.price.toFixed(2) + ' ¥' : '0.00 ¥'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += itemHTML;
+                });
+
+                // Cập nhật giá trị hiển thị cho Khung nổi Tổng tiền
+                document.getElementById('total-amount').innerText = totalCNY.toFixed(2) + ' ¥';
+
+            } catch (error) {
+                console.error(error);
+                document.getElementById('main-content').innerHTML = `<div class="loading" style="color:#e74c3c;">Đã xảy ra lỗi hệ thống khi phân tích dữ liệu cấu trúc: ${error.message}</div>`;
+            }
+        }
+
+        window.onload = loadData;
+    </script>
+</body>
+</html>
