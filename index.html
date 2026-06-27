@@ -249,24 +249,24 @@
 </head>
 <body>
 
-    <header id="provider-title">ĐANG TẢI THÔNG TIN NHÀ CUNG CẤP...</header>
+    <header id="provider-title">正在调用供应商信息...</header>
 
     <div class="container">
         <div class="widget-panel">
             <div class="card-widget total-money">
-                <div class="widget-title">总金额 (Tổng tiền nhập hàng)</div>
+                <div class="widget-title">总额 (Tổng tiền nhập hàng)</div>
                 <div class="widget-value highlight-orange" id="total-amount">0.00 ¥</div>
-                <div class="widget-subtext">Tính trên sản phẩm có số lượng > 0</div>
+                <div class="widget-subtext">筛选预购数量 > 0的产品</div>
             </div>
             <div class="card-widget status-alert" id="status-card">
-                <div class="widget-title">数据 trạng thái (Biến động dữ liệu)</div>
-                <div class="widget-value" id="data-status">Đang kiểm tra...</div>
-                <div class="widget-subtext" id="sync-time">Cập nhật lúc: --:--:--</div>
+                <div class="widget-title">数据状态 (Biến động dữ liệu)</div>
+                <div class="widget-value" id="data-status">正在检查...</div>
+                <div class="widget-subtext" id="sync-time">更新于: --:--:--</div>
             </div>
         </div>
 
         <div id="main-content" class="product-list">
-            <div class="loading">Đang tải dữ liệu sản phẩm từ kho lưu trữ...</div>
+            <div class="loading">正在调用数据...</div>
         </div>
     </div>
 
@@ -277,7 +277,7 @@
                 const metaResponse = await fetch('data/meta.json?t=' + new Date().getTime());
                 if (metaResponse.ok) {
                     const meta = await metaResponse.json();
-                    document.getElementById('provider-title').innerText = `供应商: ${meta.provider || 'N/A'} (BẢNG TRUY VẤN SẢN PHẨM)`;
+                    document.getElementById('provider-title').innerText = `供应商: ${meta.provider || 'N/A'} (预购名单)`;
                     document.getElementById('data-status').innerText = meta.status || 'Không xác định';
                     document.getElementById('sync-time').innerText = `Cập nhật gần nhất: ${meta.last_updated || 'N/A'}`;
                     
