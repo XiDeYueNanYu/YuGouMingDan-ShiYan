@@ -6,8 +6,8 @@
     "link": "https://detail.1688.com/offer/967143051423.html?spm=a360q.7751291.0.0.57e929a8B7YbDb&sk=common",
     "qty": 5,
     "price": 170,
-    "change_status": "qty_changed",
-    "change_msg": "Biến động số lượng: 6 ➔ 5 (-1)"
+    "change_status": "none",
+    "change_msg": ""
   },
   {
     "no": 2,
@@ -278,5 +278,15 @@
     "price": 260,
     "change_status": "none",
     "change_msg": ""
+  },
+  {
+    "no": 29,
+    "name": "丹金映翠",
+    "image": "https://cbu01.alicdn.com/img/ibank/O1CN01iRygWO1O6xNbvI6Ow_!!2218825851657-0-cib.jpg",
+    "link": "https://detail.1688.com/offer/987158031342.html?spm=a360q.7751291.0.0.57e929a8DeKXk9&sk=common",
+    "qty": 5,
+    "price": 70,
+    "change_status": "new",
+    "change_msg": "Sản phẩm mới thêm (新商品)"
   }
 ]
