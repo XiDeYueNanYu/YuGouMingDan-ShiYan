@@ -2,11 +2,9 @@ name: Đồng bộ dữ liệu 1688 từ Google Sheet
 
 on:
   schedule:
-    # Ví dụ: Chạy tự động vào lúc 7:00 sáng mỗi ngày (Giờ UTC là 00:00)
     - cron: '0 0 * * *'
-  workflow_dispatch: # Cho phép nhấn nút chạy bằng tay bất kỳ lúc nào trên GitHub
+  workflow_dispatch:
 
-# Các cấu hình biến môi trường có thể dễ dàng thay đổi tại đây cho từng nhà cung cấp khác nhau
 env:
   WEB_APP_URL: "https://script.google.com/macros/s/AKfycbyFTRf9ktqxsGHKjZCMYYfLpmEnHfszSBIOKN4mKYxo4pZO3aqmxaYvMLGqfrHFaJMW/exec" # Địa chỉ Web App Apps Script của bạn
   SECRET_KEY: "MAT_KHAU_BAO_MAT_CUA_BAN"                     # Trùng với key trong Apps Script
@@ -15,7 +13,7 @@ env:
   COL_IMAGE: "D"                                             # Cột link ảnh
   COL_LINK: "L"                                              # Cột link web 1688
   COL_QTY: "O"                                               # Cột số lượng đặt
-  COL_PRICE: "P"                                             # Cột giá nhập
+  COL_PRICE: "P"   
 
 jobs:
   fetch-and-compare:
@@ -27,43 +25,89 @@ jobs:
       - name: Tạo thư mục chứa dữ liệu nếu chưa có
         run: mkdir -p data
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
       - name: Tải dữ liệu mới từ Google Apps Script Web App
         run: |
           URL="${{ env.WEB_APP_URL }}?key=${{ env.SECRET_KEY }}&sheetName=${{ env.SHEET_NAME }}&colProduct=${{ env.COL_PRODUCT }}&colImage=${{ env.COL_IMAGE }}&colLink=${{ env.COL_LINK }}&colQty=${{ env.COL_QTY }}&colPrice=${{ env.COL_PRICE }}"
           curl -L -o data/current_products.json "$URL"
           
-          # Kiểm tra nếu file trống hoặc bị lỗi API
           if [ ! -s data/current_products.json ] || grep -q "error" data/current_products.json; then
             echo "Lỗi: Không lấy được dữ liệu hợp lệ từ Web App hoặc sai tham số!"
             exit 1
           fi
 
-      - name: So sánh dữ liệu cũ và mới để kiểm tra biến động
-        id: compare_zone
+      - name: Xử lý logic so sánh chi tiết biến động bằng Python
+        id: compare_logic
         run: |
-          STATUS="Không thay đổi"
-          
-          # Nếu đã có dữ liệu từ phiên chạy trước đó, tiến hành so sánh mã Hash MD5
-          if [ -f data/products.json ]; then
-            HASH_OLD=$(md5sum data/products.json | awk '{print $1}')
-            HASH_NEW=$(md5sum data/current_products.json | awk '{print $1}')
-            
-            if [ "$HASH_OLD" != "$HASH_NEW" ]; then
-              STATUS="Dữ liệu có thay đổi"
-            fi
-          else
-            STATUS="Khởi tạo dữ liệu lần đầu"
-          fi
-          
-          echo "STATUS_DATA=$STATUS" >> $GITHUB_ENV
-          echo "Trạng thái kiểm tra dữ liệu: $STATUS"
+          python - <<EOF
+          import json
+          import os
 
-      - name: Cập nhật file trạng thái và ghi đè file dữ liệu chính thức
-        run: |
-          # Ghi đè dữ liệu mới vào file chính thức
-          cp data/current_products.json data/products.json
+          old_file = 'data/products.json'
+          new_file = 'data/current_products.json'
           
-          # Lưu trạng thái biến động và thời gian cập nhật vào một file meta để GitHub Pages đọc
+          has_changes = False
+          change_details = []
+
+          # Đọc dữ liệu mới tải về
+          with open(new_file, 'r', encoding='utf-8') as f:
+              new_data = json.load(f)
+
+          # Nếu đã có dữ liệu cũ, tiến hành so sánh chi tiết từng dòng
+          if os.path.exists(old_file) and os.path.getsize(old_file) > 0:
+              with open(old_file, 'r', encoding='utf-8') as f:
+                  old_data = json.load(f)
+              
+              # Tạo từ điển để tra cứu nhanh sản phẩm cũ dựa trên 'link' (nếu link trống thì dùng 'name')
+              old_dict = {}
+              for item in old_data:
+                  key = item['link'] if (item['link'] and item['link'] != '#') else item['name']
+                  old_dict[key] = item
+
+              # Duyệt qua từng sản phẩm mới để tìm biến động
+              for item in new_data:
+                  key = item['link'] if (item['link'] and item['link'] != '#') else item['name']
+                  
+                  if key not in old_dict:
+                      # Không tìm thấy trong dữ liệu cũ -> Sản phẩm mới thêm
+                      item['change_status'] = 'new'
+                      item['change_msg'] = 'Sản phẩm mới thêm (新商品)'
+                      has_changes = True
+                  else:
+                      old_item = old_dict[key]
+                      # So sánh số lượng đặt
+                      if item['qty'] != old_item['qty']:
+                          diff = item['qty'] - old_item['qty']
+                          sign = "+" if diff > 0 else ""
+                          item['change_status'] = 'qty_changed'
+                          item['change_msg'] = f"Biến động số lượng: {old_item['qty']} ➔ {item['qty']} ({sign}{diff})"
+                          has_changes = True
+                      else:
+                          item['change_status'] = 'none'
+                          item['change_msg'] = ''
+          else:
+              # Lần chạy đầu tiên chưa có dữ liệu cũ để so sánh
+              for item in new_data:
+                  item['change_status'] = 'none'
+                  item['change_msg'] = ''
+              has_changes = True # Kích hoạt để tạo file meta lần đầu
+
+          # Ghi đè file chính thức bằng dữ liệu mới đã được gắn tag biến động
+          with open('data/products.json', 'w', encoding='utf-8') as f:
+              json.dump(new_data, f, ensure_ascii=False, indent=2)
+
+          # Xuất trạng thái ra biến môi trường GitHub
+          status_text = "Dữ liệu có thay đổi" if has_changes and os.path.exists(old_file) else ("Khởi tạo dữ liệu lần đầu" if not os.path.exists(old_file) else "Không thay đổi")
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as env_file:
+              env_file.write(f"STATUS_DATA={status_text}\n")
+          EOF
+
+      - name: Cập nhật file trạng thái tổng quan
+        run: |
           TIMESTAMP=$(date -d '+7 hours' '+%d/%m/%Y %H:%M:%S')
           echo "{\"status\": \"${{ env.STATUS_DATA }}\", \"last_updated\": \"$TIMESTAMP\", \"provider\": \"${{ env.SHEET_NAME }}\"}" > data/meta.json
 
@@ -73,10 +117,9 @@ jobs:
           git config --local user.name "GitHub Action Bot"
           git add data/products.json data/meta.json
           
-          # Chỉ commit nếu có sự thay đổi thực sự trong file hệ thống
           if ! git diff --cached --quiet; then
-            git commit -m "Cập nhật dữ liệu nhà cung cấp tự động: ${{ env.SHEET_NAME }} ($TIMESTAMP)"
+            git commit -m "Cập nhật dữ liệu & biến động tự động: ${{ env.SHEET_NAME }} ($TIMESTAMP)"
             git push
           else
-            echo "Không có thay đổi nào trong tệp dữ liệu để cập nhật lên kho lưu trữ."
+            echo "Không có biến động nào được phát hiện."
           fi
