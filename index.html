@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-	<meta name="referrer" content="no-referrer">
+    <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ thống Truy vấn Nhập hàng 1688</title>
     <style>
@@ -14,10 +14,9 @@
         }
         body {
             background-color: #f5f7fa;
-            padding-top: 80px; /* Nhường chỗ cho tiêu đề luôn nổi cố định phía trên */
+            padding-top: 80px;
             padding-bottom: 40px;
         }
-        /* Tiêu đề luôn nổi cố định trên đầu màn hình */
         header {
             position: fixed;
             top: 0;
@@ -40,7 +39,6 @@
             margin: 20px auto;
             padding: 0 15px;
         }
-        /* Widget Khung nổi thông tin */
         .widget-panel {
             display: flex;
             gap: 15px;
@@ -55,7 +53,7 @@
             border-left: 5px solid #3498db;
         }
         .card-widget.total-money {
-            border-left-color: #e67e22; /* Màu cam 1688 đặc trưng cho tài chính */
+            border-left-color: #e67e22;
         }
         .card-widget.status-alert {
             border-left-color: #2ecc71;
@@ -77,7 +75,6 @@
             color: #95a5a6;
             margin-top: 3px;
         }
-        /* Cấu trúc Danh sách sản phẩm dạng bảng chia 2 cột Trái - Phải */
         .product-list {
             display: flex;
             flex-direction: column;
@@ -90,8 +87,16 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             overflow: hidden;
             border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+            position: relative;
         }
-        /* Cột bên trái: Hiển thị hình ảnh sản phẩm */
+        
+        /* 💡 THÊM MỚI: CSS bôi nền màu cam nhạt khi có biến động */
+        .product-item.has-changed {
+            background-color: #fff9f1; /* Màu nền cam nhạt nhẹ nhàng */
+            border: 1px solid #ffdfb4; /* Viền màu cam nhạt */
+        }
+        
         .product-left {
             width: 160px;
             min-width: 160px;
@@ -101,6 +106,11 @@
             justify-content: center;
             border-right: 1px solid #e2e8f0;
             padding: 10px;
+        }
+        /* Đồng bộ màu nền bên trái khi hàng bị biến động */
+        .product-item.has-changed .product-left {
+            background-color: #fff5e6;
+            border-right: 1px solid #ffdfb4;
         }
         .product-left img {
             max-width: 100%;
@@ -113,7 +123,6 @@
             color: #bdc3c7;
             text-align: center;
         }
-        /* Cột bên phải: Hiển thị các thông tin tương ứng */
         .product-right {
             flex: 1;
             padding: 15px 20px;
@@ -156,6 +165,22 @@
         .highlight-bold {
             font-weight: bold;
         }
+        
+        /* 💡 THÊM MỚI: Thanh thông báo dòng chữ biến động chi tiết cụ thể */
+        .change-badge {
+            background-color: #ffebd2;
+            color: #d35400;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid #ffcc8d;
+            width: fit-content;
+        }
+        
         .loading {
             text-align: center;
             padding: 40px;
@@ -246,10 +271,9 @@
     </div>
 
     <script>
-        // Hàm tự động thực thi khi trang web được tải xong
         async function loadData() {
             try {
-                // 1. Fetch dữ liệu thông tin biến động bổ trợ trước (meta.json)
+                // 1. Đọc file meta trạng thái tổng quan
                 const metaResponse = await fetch('data/meta.json?t=' + new Date().getTime());
                 if (metaResponse.ok) {
                     const meta = await metaResponse.json();
@@ -257,22 +281,21 @@
                     document.getElementById('data-status').innerText = meta.status || 'Không xác định';
                     document.getElementById('sync-time').innerText = `Cập nhật gần nhất: ${meta.last_updated || 'N/A'}`;
                     
-                    // Thiết lập màu sắc khung nổi thông báo dựa trên trạng thái biến động
                     const statusCard = document.getElementById('status-card');
                     if (meta.status === "Dữ liệu có thay đổi") {
-                        statusCard.style.borderLeftColor = "#e74c3c"; // Màu đỏ cảnh báo
+                        statusCard.style.borderLeftColor = "#e67e22"; // Cam đậm cảnh báo biến động
                     } else if (meta.status === "Không thay đổi") {
-                        statusCard.style.borderLeftColor = "#2ecc71"; // Màu xanh an toàn
+                        statusCard.style.borderLeftColor = "#2ecc71";
                     }
                 }
 
-                // 2. Fetch danh sách sản phẩm chính thức (products.json)
+                // 2. Đọc file danh sách sản phẩm chính thức có đính tag thông tin thay đổi
                 const prodResponse = await fetch('data/products.json?t=' + new Date().getTime());
                 if (!prodResponse.ok) throw new Error("Không thể tải danh sách sản phẩm");
                 
                 const products = await prodResponse.json();
                 const container = document.getElementById('main-content');
-                container.innerHTML = ''; // Xóa thông báo loading
+                container.innerHTML = '';
 
                 if (products.length === 0) {
                     container.innerHTML = '<div class="loading">Không tìm thấy sản phẩm nào có số lượng đặt lớn hơn 0.</div>';
@@ -281,29 +304,34 @@
 
                 let totalCNY = 0;
 
-                // 3. Vòng lặp kết xuất mã HTML cho từng sản phẩm theo cấu trúc yêu cầu
                 products.forEach(item => {
-                    // Tính tổng tiền cộng dồn (Số lượng * Giá)
                     totalCNY += (item.qty * item.price);
 
-                    // Xử lý chuỗi hình ảnh phòng trường hợp ô dữ liệu trống
                     let imageHTML = `<div class="no-img">Không có ảnh</div>`;
                     if (item.image && item.image.startsWith('http')) {
                         imageHTML = `<img src="${item.image}" alt="Sản phẩm 1688" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'no-img\'>Lỗi tải ảnh</div>';">`;
                     }
 
-                    // Xử lý liên kết sản phẩm, nếu trống không cho click lung tung
                     const linkHTML = (item.link && item.link !== "#") 
                         ? `<a href="${item.link}" target="_blank">点击访问 (Xem Sản Phẩm)</a>` 
                         : `<span style="color:#95a5a6;font-style:italic;">Không có liên kết</span>`;
 
-                    // Tạo khối HTML cấu trúc Trái (Ảnh) - Phải (Nội dung dữ liệu cụ thể)
+                    // 💡 CẢI TIẾN LOGIC: Kiểm tra nếu sản phẩm có biến động (new hoặc qty_changed)
+                    let changeBadgeHTML = '';
+                    let itemClassModifier = '';
+                    
+                    if (item.change_status && item.change_status !== 'none') {
+                        itemClassModifier = 'has-changed'; // Thêm class để bôi nền màu cam nhạt
+                        changeBadgeHTML = `<div class="change-badge">⚠️ ${item.change_msg}</div>`; // Tạo khung chữ thông báo cụ thể
+                    }
+
                     const itemHTML = `
-                        <div class="product-item">
+                        <div class="product-item ${itemClassModifier}">
                             <div class="product-left">
                                 ${imageHTML}
                             </div>
                             <div class="product-right">
+                                ${changeBadgeHTML}
                                 <div class="info-row">
                                     <div class="info-label">序号 (STT):</div>
                                     <div class="info-val highlight-bold">${item.no}</div>
@@ -330,7 +358,6 @@
                     container.innerHTML += itemHTML;
                 });
 
-                // Cập nhật giá trị hiển thị cho Khung nổi Tổng tiền
                 document.getElementById('total-amount').innerText = totalCNY.toFixed(2) + ' ¥';
 
             } catch (error) {
