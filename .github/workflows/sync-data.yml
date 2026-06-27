@@ -1,0 +1,82 @@
+name: Đồng bộ dữ liệu 1688 từ Google Sheet
+
+on:
+  schedule:
+    # Ví dụ: Chạy tự động vào lúc 7:00 sáng mỗi ngày (Giờ UTC là 00:00)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Cho phép nhấn nút chạy bằng tay bất kỳ lúc nào trên GitHub
+
+# Các cấu hình biến môi trường có thể dễ dàng thay đổi tại đây cho từng nhà cung cấp khác nhau
+env:
+  WEB_APP_URL: "https://script.google.com/macros/s/AKfycbyFTRf9ktqxsGHKjZCMYYfLpmEnHfszSBIOKN4mKYxo4pZO3aqmxaYvMLGqfrHFaJMW/exec" # Địa chỉ Web App Apps Script của bạn
+  SECRET_KEY: "MAT_KHAU_BAO_MAT_CUA_BAN"                     # Trùng với key trong Apps Script
+  SHEET_NAME: "NgheNhan071"                                        # Tên Tab cần lấy dữ liệu
+  COL_PRODUCT: "B"                                           # Cột tên sản phẩm
+  COL_IMAGE: "D"                                             # Cột link ảnh
+  COL_LINK: "L"                                              # Cột link web 1688
+  COL_QTY: "O"                                               # Cột số lượng đặt
+  COL_PRICE: "P"                                             # Cột giá nhập
+
+jobs:
+  fetch-and-compare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kiểm tra mã nguồn công việc
+        uses: actions/checkout@v4
+
+      - name: Tạo thư mục chứa dữ liệu nếu chưa có
+        run: mkdir -p data
+
+      - name: Tải dữ liệu mới từ Google Apps Script Web App
+        run: |
+          URL="${{ env.WEB_APP_URL }}?key=${{ env.SECRET_KEY }}&sheetName=${{ env.SHEET_NAME }}&colProduct=${{ env.COL_PRODUCT }}&colImage=${{ env.COL_IMAGE }}&colLink=${{ env.COL_LINK }}&colQty=${{ env.COL_QTY }}&colPrice=${{ env.COL_PRICE }}"
+          curl -L -o data/current_products.json "$URL"
+          
+          # Kiểm tra nếu file trống hoặc bị lỗi API
+          if [ ! -s data/current_products.json ] || grep -q "error" data/current_products.json; then
+            echo "Lỗi: Không lấy được dữ liệu hợp lệ từ Web App hoặc sai tham số!"
+            exit 1
+          fi
+
+      - name: So sánh dữ liệu cũ và mới để kiểm tra biến động
+        id: compare_zone
+        run: |
+          STATUS="Không thay đổi"
+          
+          # Nếu đã có dữ liệu từ phiên chạy trước đó, tiến hành so sánh mã Hash MD5
+          if [ -f data/products.json ]; then
+            HASH_OLD=$(md5sum data/products.json | awk '{print $1}')
+            HASH_NEW=$(md5sum data/current_products.json | awk '{print $1}')
+            
+            if [ "$HASH_OLD" != "$HASH_NEW" ]; then
+              STATUS="Dữ liệu có thay đổi"
+            fi
+          else
+            STATUS="Khởi tạo dữ liệu lần đầu"
+          fi
+          
+          echo "STATUS_DATA=$STATUS" >> $GITHUB_ENV
+          echo "Trạng thái kiểm tra dữ liệu: $STATUS"
+
+      - name: Cập nhật file trạng thái và ghi đè file dữ liệu chính thức
+        run: |
+          # Ghi đè dữ liệu mới vào file chính thức
+          cp data/current_products.json data/products.json
+          
+          # Lưu trạng thái biến động và thời gian cập nhật vào một file meta để GitHub Pages đọc
+          TIMESTAMP=$(date -d '+7 hours' '+%d/%m/%Y %H:%M:%S')
+          echo "{\"status\": \"${{ env.STATUS_DATA }}\", \"last_updated\": \"$TIMESTAMP\", \"provider\": \"${{ env.SHEET_NAME }}\"}" > data/meta.json
+
+      - name: Cam kết cấu trúc và Đẩy lên nhánh GitHub
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add data/products.json data/meta.json
+          
+          # Chỉ commit nếu có sự thay đổi thực sự trong file hệ thống
+          if ! git diff --cached --quiet; then
+            git commit -m "Cập nhật dữ liệu nhà cung cấp tự động: ${{ env.SHEET_NAME }} ($TIMESTAMP)"
+            git push
+          else
+            echo "Không có thay đổi nào trong tệp dữ liệu để cập nhật lên kho lưu trữ."
+          fi
