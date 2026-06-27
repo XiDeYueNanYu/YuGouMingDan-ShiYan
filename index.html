@@ -279,7 +279,7 @@
                     const meta = await metaResponse.json();
                     document.getElementById('provider-title').innerText = `供应商: ${meta.provider || 'N/A'} (预购名单)`;
                     document.getElementById('data-status').innerText = meta.status || 'Không xác định';
-                    document.getElementById('sync-time').innerText = `Cập nhật gần nhất: ${meta.last_updated || 'N/A'}`;
+                    document.getElementById('sync-time').innerText = `更新于: ${meta.last_updated || 'N/A'}`;
                     
                     const statusCard = document.getElementById('status-card');
                     if (meta.status === "数据有改变（Dữ liệu có thay đổi）") {
