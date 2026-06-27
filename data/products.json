@@ -6,8 +6,8 @@
     "link": "https://detail.1688.com/offer/928327775659.html?spm=a360q.7751291.0.0.57e929a8B7YbDb&sk=common",
     "qty": 5,
     "price": 150,
-    "change_status": "qty_changed",
-    "change_msg": "数量更改（thay đổi số lượng）: 2 ➔ 5 (+3)"
+    "change_status": "none",
+    "change_msg": ""
   },
   {
     "no": 2,
