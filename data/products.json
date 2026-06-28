@@ -6,8 +6,8 @@
     "link": "https://detail.1688.com/offer/967143051423.html?spm=a360q.7751291.0.0.57e929a8B7YbDb&sk=common",
     "qty": 5,
     "price": 170,
-    "change_status": "none",
-    "change_msg": ""
+    "change_status": "new",
+    "change_msg": "新增产品(Sản phẩm mới thêm)"
   },
   {
     "no": 2,
@@ -16,8 +16,8 @@
     "link": "https://detail.1688.com/offer/928327775659.html?spm=a360q.7751291.0.0.57e929a8B7YbDb&sk=common",
     "qty": 2,
     "price": 150,
-    "change_status": "none",
-    "change_msg": ""
+    "change_status": "qty_changed",
+    "change_msg": "数量更改（thay đổi số lượng）: 5 ➔ 2 (-3)"
   },
   {
     "no": 3,
@@ -286,7 +286,7 @@
     "link": "https://detail.1688.com/offer/987158031342.html?spm=a360q.7751291.0.0.57e929a8DeKXk9&sk=common",
     "qty": 5,
     "price": 70,
-    "change_status": "new",
-    "change_msg": "Sản phẩm mới thêm (新商品)"
+    "change_status": "none",
+    "change_msg": ""
   }
 ]

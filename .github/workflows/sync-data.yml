@@ -75,7 +75,7 @@ jobs:
                   if key not in old_dict:
                       # Không tìm thấy trong dữ liệu cũ -> Sản phẩm mới thêm
                       item['change_status'] = 'new'
-                      item['change_msg'] = 'Sản phẩm mới thêm (新商品)'
+                      item['change_msg'] = '新增产品(Sản phẩm mới thêm)'
                       has_changes = True
                   else:
                       old_item = old_dict[key]
@@ -84,7 +84,7 @@ jobs:
                           diff = item['qty'] - old_item['qty']
                           sign = "+" if diff > 0 else ""
                           item['change_status'] = 'qty_changed'
-                          item['change_msg'] = f"Biến động số lượng: {old_item['qty']} ➔ {item['qty']} ({sign}{diff})"
+                          item['change_msg'] = f"数量更改（thay đổi số lượng）: {old_item['qty']} ➔ {item['qty']} ({sign}{diff})"
                           has_changes = True
                       else:
                           item['change_status'] = 'none'
@@ -101,7 +101,7 @@ jobs:
               json.dump(new_data, f, ensure_ascii=False, indent=2)
 
           # Xuất trạng thái ra biến môi trường GitHub
-          status_text = "Dữ liệu có thay đổi" if has_changes and os.path.exists(old_file) else ("Khởi tạo dữ liệu lần đầu" if not os.path.exists(old_file) else "Không thay đổi")
+          status_text = "数据有改变" if has_changes and os.path.exists(old_file) else ("Khởi tạo dữ liệu lần đầu" if not os.path.exists(old_file) else "数据保持")
           with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as env_file:
               env_file.write(f"STATUS_DATA={status_text}\n")
           EOF
