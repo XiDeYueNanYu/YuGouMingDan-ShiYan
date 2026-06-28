@@ -6,14 +6,14 @@ on:
   workflow_dispatch:
 
 env:
-  WEB_APP_URL: "https://script.google.com/macros/s/AKfycbyFTRf9ktqxsGHKjZCMYYfLpmEnHfszSBIOKN4mKYxo4pZO3aqmxaYvMLGqfrHFaJMW/exec" # Địa chỉ Web App Apps Script của bạn
+  WEB_APP_URL: "https://script.google.com/macros/s/AKfycbzo-5HeAY89NG7kRZIz4TvfqaQI6a9VGALt3JcwWMaaVVqYz7fhudcUW6wV9L0CuTkW/exec" # Địa chỉ Web App Apps Script của bạn
   SECRET_KEY: "MAT_KHAU_BAO_MAT_CUA_BAN"                     # Trùng với key trong Apps Script
-  SHEET_NAME: "NgheNhan071"                                        # Tên Tab cần lấy dữ liệu
+  SHEET_NAME: "NgheNhan136-Lan-2-thunghiem"                                        # Tên Tab cần lấy dữ liệu
   COL_PRODUCT: "B"                                           # Cột tên sản phẩm
-  COL_IMAGE: "D"                                             # Cột link ảnh
-  COL_LINK: "L"                                              # Cột link web 1688
-  COL_QTY: "O"                                               # Cột số lượng đặt
-  COL_PRICE: "P"   
+  COL_IMAGE: "AR"                                             # Cột link ảnh
+  COL_LINK: "AP"                                              # Cột link web 1688
+  COL_QTY: "M"                                               # Cột số lượng đặt
+  COL_PRICE: "K"                                            # Cột giá
 
 jobs:
   fetch-and-compare:
